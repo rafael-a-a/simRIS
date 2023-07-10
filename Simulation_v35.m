@@ -1,17 +1,18 @@
 
+function result = Simulation_v35(pilots,frequency,iterations,iterationcounter)
+
+clearvars -except pilots frequency iterations iterationcounter
 %Get table from .xls file
-clear all;
-
 table = readtable('table1.xls');
-fig = uifigure;
-uit = uitable(fig,'Data',table,'Position',[10 10 550 400]);
-drawnow
+%fig = uifigure;
+%uit = uitable(fig,'Data',table,'Position',[10 10 550 400]);
+%drawnow
 
-fprintf(" If you want to change any of the parameters (except carrier frequency) listed on Table 1 \n");
-fprintf(" please change them in the .xls file and re-run the simulation \n");
+% fprintf(" If you want to change any of the parameters (except carrier frequency) listed on Table 1 \n");
+% fprintf(" please change them in the .xls file and re-run the simulation \n");
 
-text1 = 'Do you want to change carrier frequency? (y/n) \n';
-change = input(text1,"s");
+% text1 = 'Do you want to change carrier frequency? (y/n) \n';
+% change = input(text1,"s");
 
                             %Initializing parameters
 
@@ -20,7 +21,7 @@ G_T = 10^(table{2:2,["Value"]}/10);
 G_R = 10^(table{3:3,["Value"]}/10);
 N_t = table{4:4,["Value"]};
 %N = table{5:5,["Value"]};
-N = 16; %FOR NOW !!!!!!!!!!!!!!!!!!!!!!
+N = 1; %FOR NOW !!!!!!!!!!!!!!!!!!!!!!
 df = table{6:6,["Value"]} * 1e3;  %KHz
 TX_pwr_sub = 10^(table{7:7,["Value"]}/10)/1000;
 T_a = table{8:8,["Value"]} * 1e-9; %nanoseconds
@@ -45,19 +46,23 @@ Gc = pi;
 P_T = 1;
 
 
-disp('This simulation assumes that UE is always in NLOS');
+% disp('This simulation assumes that UE is always in NLOS');
 zeta_0 = 0;
 
 
-switch change
-    case 'y'
-        text2 = 'Enter carrier frequency in GHz \n';
-        f_c = input(text2) * 1e9 ;
-    otherwise
+% switch change
+%     case 'y'
+%         text2 = 'Enter carrier frequency in GHz \n';
+%         f_c = input(text2) * 1e9 ;
+%     otherwise
+% 
+% end
+% 
+% T = input('Please choose how many (1-120) pilots (T) \n');  %pilots
 
-end
+f_c = frequency * 1e9;
+T = pilots;
 
-T = input('Please choose how many(1-120) pilots (T) \n');  %pilots
 lambda = 3e8 / (f_c);
 L_x = lambda / 2;                              % L_x = lambda/2
 L_y = L_x;
@@ -75,17 +80,27 @@ end
 clear i;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-                                        % UE location
-
-p_x = unifrnd(-4,4);
-p_y = unifrnd(1,10);
-p_z = 1;
-
-%p = [p_x p_y p_z];
-p = [0 1 1];
                                         %TX location
 
 ptx = [0 5 1];
+                                        % UE location
+
+p_x = unifrnd(-4.3,4.3);
+p_y = unifrnd(0.7,9.3);
+p_z = 1;
+
+p = [p_x p_y p_z];
+
+while norm(p-ptx) < 2
+    p_x = unifrnd(-4.3,4.3);
+    p_y = unifrnd(0.7,9.3);
+    p = [p_x p_y p_z];
+end
+%p = [0.865 4.5 1];
+%p = [0.465 5.297 1];
+%p = [0 1 1];
+p = [0.281 4.874 1];
+
 
                                         %RIS distribution
 
@@ -160,12 +175,12 @@ for i= 1:K
 end
 clear i;
 
-figure();
-plot(THETAi_k(:,2)*180/pi)
-hold on
-plot(THETAr_k(:,2)*180/pi)
-legend('Incident theta','Reflected theta')
-title('Theta');
+% figure();
+% plot(THETAi_k(:,2)*180/pi)
+% hold on
+% plot(THETAr_k(:,2)*180/pi)
+% legend('Incident theta','Reflected theta')
+% title('Theta');
 
 
 
@@ -189,12 +204,12 @@ for i = 1:K
 end
 clear i;
 %eq3
-figure();
-plot(AF(:,1))
-hold on
-plot(AF(:,2))
-legend('Incident AF','Reflected AF')
-title('Array Factor');
+% figure();
+% plot(AF(:,1))
+% hold on
+% plot(AF(:,2))
+% legend('Incident AF','Reflected AF')
+% title('Array Factor');
 
 for i = 1:K
     F(i,1) = functionslibv7.normpwr(THETAi_k(i,1),THETAi_k(i,2));
@@ -209,10 +224,13 @@ PSIt_k = zeros(T,K);
 
 for t = 1:T
     for cont = 1:K
-    %    PSIt_k(i,cont) = functionslibv7.refphase();
-    PSIt_k(t,cont) = 2*pi*t*floor(cont*T/K)/T;
+        PSIt_k(t,cont) = functionslibv7.refphase();
+        %PSIt_k(t,cont) = 2*pi*t*floor(cont*T/K)/T; %(iii)
+        %PSIt_k(t,cont) = unifrnd(0,2*pi); %(i)
+
     end
 end
+
 
 BETAt_k = zeros(T,K);
 %eq 1
@@ -222,11 +240,17 @@ for i = 1:T
     end
 end
 
-clear i;
-
-figure();
-plot(abs(BETAt_k(2,:)));
-legend('Betat_k for subcarrier 2');
+% sum(BETAt_k(:,1))
+% sum(BETAt_k(:,10))
+% sum(BETAt_k(:,25))
+% sum(BETAt_k(:,50))
+% sum(BETAt_k(:,75))
+% sum(BETAt_k(:,100))
+% BETAt_k(:,100)
+% 
+% figure();
+% plot(real(BETAt_k(:,100)));
+% legend('Betat_k for k=100');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                                         %Direct channel coefficent
@@ -334,9 +358,9 @@ end
 clear i;
 %same model as eq 6
 
-figure()
-surf(abs(gdp))
-legend('absolute value of gdp');
+% figure()
+% surf(abs(gdp))
+% legend('absolute value of gdp');
 
 for n = 1:N
     for i = 1:K
@@ -347,9 +371,9 @@ for n = 1:N
 end
 clear i;
 
-figure()
-surf(abs(gmp))
-title('gmp absolute value')
+% figure()
+% surf(abs(gmp))
+% title('gmp absolute value')
 
 % figure();
 % plot(angle(gmp(:,50)*180/pi))
@@ -360,9 +384,9 @@ gr = zeros(N,K);
 
 gr = gmp + gdp;
 
-figure()
-surf(abs(gr))
-title('gr absolute value')
+% figure()
+% surf(abs(gr))
+% title('gr absolute value')
 
 normpk = zeros(K,1); % ||p - p_k||
 
@@ -409,9 +433,9 @@ clear i;
 br = bdp + bmp;
 
 
-figure()
-surf(abs(br))
-legend('abs of br')
+% figure()
+% surf(abs(br))
+% legend('abs of br')
 
 hr = zeros(N,K);
 
@@ -427,13 +451,13 @@ clear i;
 
 hdpnk = bdp .* gdp;
 
-figure()
-surf(abs(hr));
-title('hr abs');
-
-figure()
-surf(abs(hdpnk));
-title('hdpnk abs');
+% figure()
+% surf(abs(hr));
+% title('hr abs');
+% 
+% figure()
+% surf(abs(hdpnk));
+% title('hdpnk abs');
 %ynt
 
 y = zeros(N,T);
@@ -461,9 +485,9 @@ for n = 1:N
 end
 clear i;
 
-figure()
-surf(abs(y));                           
-title('y abs');
+% figure()
+% surf(abs(y));                           
+% title('y abs');
 
 yd = zeros(N,1);
 w2 = sqrt(sig2/2)*(randn(1,N)+1*1i*randn(1,N));
@@ -511,36 +535,58 @@ pestimation = zeros(N,3);
 %'Display','off', 'Solver','fmincon');v1
 %options = optimoptions('fmincon','MaxFunctionEvaluations',1e5,'MaxIterations',1e3, 'Display','off');
 
-options = optimoptions('particleswarm','MaxIterations',10e99);
+options = optimoptions('particleswarm','MaxIterations',10e12,'SwarmSize',1200);
 
-lb = [-3 0 0.6];
-ub = [3 7 1.4];
+%lb = [-2 0 0.8];
+%ub = [2 4 1.2];
 
-%lb = [p_x-0.4 p_y-0.38 p_z-0.2];
-%ub = [p_x+0.7 p_y+0.4 p_z+0.4];
-
-searchspacevolume = abs(ub(1,1) - lb(1,1)) * abs(ub(1,2) - lb(1,2)) * abs(ub(1,3) - lb(1,3));
-
-figure();
-plot3(ptx(1,1),ptx(1,2),ptx(1,3), 'o', 'MarkerSize', 10);
-hold on
-plot3(p(1,1),p(1,2),p(1,3), '+k', 'MarkerSize', 10);
-hold on
-hold on
-plot3(lb(1,1),lb(1,2),lb(1,3),'*','MarkerSize',10);
-hold on
-plot3(ub(1,1),ub(1,2),ub(1,3),'*','MarkerSize',10);
-hold on
-
-for i = 1:K
-    plot3(p_k(i,1),p_k(i,2),p_k(1,3),'.', 'MarkerSize', 10);
-    hold on
+lbx = p(1,1) - 6;
+lby = p(1,2) - 6;
+ubx = p(1,1) + 6;
+uby = p(1,2) + 6;
+if lbx < -4.3
+    lbx = -4.3;
+end
+if lby < 0.7
+    lby = 0.7;
+end
+if ubx > 4.3
+    ubx = 4.3;
+end
+if uby > 9.3
+    uby = 9.3;
 end
 
-clear i;
 
-legend('tx','UE','Lower Bound','Upper Bound','RIS');
-title('3D View');
+lb = [-4 1 p_z];
+ub = [4 9 p_z];
+
+searchspacearea = abs(ub(1,1) - lb(1,1)) * abs(ub(1,2) - lb(1,2));
+
+% if iterations == iterationcounter
+%     figure();
+%     plot3(ptx(1,1),ptx(1,2),ptx(1,3), 'o', 'MarkerSize', 10);
+%     hold on
+%     plot3(p(1,1),p(1,2),p(1,3), '+k', 'MarkerSize', 10);
+%     hold on
+%     hold on
+%     plot3(lb(1,1),lb(1,2),lb(1,3),'*','MarkerSize',10);
+%     hold on
+%     plot3(ub(1,1),ub(1,2),ub(1,3),'*','MarkerSize',10);
+%     hold on
+% 
+%     for i = 1:K
+%         plot3(p_k(i,1),p_k(i,2),p_k(1,3),'.', 'MarkerSize', 10);
+%         hold on
+%     end
+% 
+%     legend('tx','UE','Lower Bound','Upper Bound','RIS');
+%     title('3D View');
+% end
+clear i
+
+
+
 
 for n = 1:N
   %p_ = fminsearch(@(p_)functionslibv7.objective(p_,n,K,T,y,gdp,G_R,f_n,p_k,BETAt_k,sig2,phi_0,t_0),x0,options);
@@ -556,104 +602,107 @@ end
 
 
 pfinal = functionslibv7.outrem(pestimation,N);
-error = abs(norm(p) - norm(pfinal)) * 100;   %% error in cm
-fprintf("Error: " + error + "cm" + "\n")
-fprintf("Search space volume: "+ searchspacevolume + 'm^3'+ "\n");
+error = norm(p - pfinal) * 100;   %% error in cm
+fprintf("Error: " + error + "cm" + "\n");
+fprintf("Search space area: "+ searchspacearea + 'm^2'+ "\n");
+disp("UE position: ")
+disp(p);
+
+%%Important%%%
+%To calculate errors and send to the main script uncomment the next line.
+%result = error; 
+%To draw the position estimates uncomment the next line:
+result = pfinal;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%%%%%%%%%%%%%%%%%%%%%%Second Algorithm%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-idft  = dsp.IFFT('FFTLengthSource','Property', ...
-    'FFTLength',N*F_o); %definition of idft function, oversampled by a factor of F_o
-
-%nota: ordenar melhores estimativas por ordem decrescente.
-
-%eq 32
-zd = idft(yd);
-%zm = zeros(K,N*F_o);
-
-um_ = transpose(um); % transposed um for idft, this is because idft only works for arrays (any number x 1)
-%since um is KxN, its needed to use um transpose matrix in order to get IDFT relative to each k.
-zm = zeros(N*F_o,K);
-
-for m = 1:K
-    zm(:,m) = idft(um_(:,m)); % this is the consequence of what was written in line 421
-    %idft is stored in row m of matrix zm
-end
-
-
-%power calculation, this is for testing
-P = zeros(K,1); %power
-SNR = zeros(K,1);
-
-for m  = 1:K
-    P(m,1) = pow2db(sum(abs(zm(:,m)).^2)/(N*F_o));
-end
-
-for m  = 1:K
-    SNR(m,1) = P(m,1) + 30 - sig2;
-end
-
-
-xaxis = [1:1:100];
-%plot(xaxis,SNR) %plot of snr.
-
-%below is commented, not needed right now
-
-
-
-%
-%zm = idft(um(1,:));
-% zdtime(1,:) = zd(:,1);
-% zmtime(1,:) = (zm(:,1));
-
-%[m, Tau_d] = max(zdtime);
-%[m, Tau_m] = max(zmtime);
-
-%Tau_d = Tau_d * 100/(N*F_o) * 1e-9;
-
-%3e8*(Tau_d) - norm(ptx-p)
-
-
-%t_instant = 1/(N*F_o):100/(N*F_o):100;
-
-%plot(t_instant,abs(zdtime));
-
-%
-%%%%%%%IGNORE%%%%%%%%%
-
-% x0 = -5:0.1:5;
-% y0 = 0:0.1:10;
-% [X,Y] = meshgrid(x0,y0);
-%
-% ar = zeros(1,3);
-%
-%
-% Z = zeros(101,101);
-% for i = 1:101
-%     for b = 1:101
-%         ar(1,1) = x0(1,i);
-%         ar(1,2) = y0(1,b);
-%         ar(1,3) = 1;
-%         Z(i,b) = functionslibv4.objective(ar,10,K,T,y,gdp,G_R,f_n,p_k,BETAt_k,sig2,phi_0,t_0);
-%     end
+% idft  = dsp.IFFT('FFTLengthSource','Property', ...
+%     'FFTLength',N*F_o); %definition of idft function, oversampled by a factor of F_o
+% 
+% %nota: ordenar melhores estimativas por ordem decrescente.
+% %eq 32
+% zd = idft(yd);
+% %zm = zeros(K,N*F_o);
+% 
+% um_ = transpose(um); % transposed um for idft, this is because idft only works for arrays (any number x 1)
+% %since um is KxN, its needed to use um transpose matrix in order to get IDFT relative to each k.
+% zm = zeros(N*F_o,K);
+% 
+% for m = 1:K
+%     zm(:,m) = idft(um_(:,m)); % this is the consequence of what was written in line 421
+%     %idft is stored in row m of matrix zm
 % end
-%
-% surf(X,Y,Z)
-% for t = 1:T
-%     phit = ...
-%
+% 
+% 
+% %power calculation, this is for testing
+% P = zeros(K,1); %power
+% SNR = zeros(K,1);
+% 
+% for m  = 1:K
+%     P(m,1) = pow2db(sum(abs(zm(:,m)).^2)/(N*F_o));
 % end
-
-
-%guardar
-
-%err = (guardar ~= hdp)
-
-
-% plot snr to tile (m)
-return
-
-
-
+% 
+% for m  = 1:K
+%     SNR(m,1) = P(m,1) + 30 - sig2;
+% end
+% 
+% 
+% xaxis = [1:1:100];
+% %plot(xaxis,SNR) %plot of snr.
+% 
+% %below is commented, not needed right now
+% 
+% 
+% 
+% %
+% %zm = idft(um(1,:));
+% % zdtime(1,:) = zd(:,1);
+% % zmtime(1,:) = (zm(:,1));
+% 
+% %[m, Tau_d] = max(zdtime);
+% %[m, Tau_m] = max(zmtime);
+% 
+% %Tau_d = Tau_d * 100/(N*F_o) * 1e-9;
+% 
+% %3e8*(Tau_d) - norm(ptx-p)
+% 
+% 
+% %t_instant = 1/(N*F_o):100/(N*F_o):100;
+% 
+% %plot(t_instant,abs(zdtime));
+% 
+% %
+% %%%%%%%IGNORE%%%%%%%%%
+% 
+% % x0 = -5:0.1:5;
+% % y0 = 0:0.1:10;
+% % [X,Y] = meshgrid(x0,y0);
+% %
+% % ar = zeros(1,3);
+% %
+% %
+% % Z = zeros(101,101);
+% % for i = 1:101
+% %     for b = 1:101
+% %         ar(1,1) = x0(1,i);
+% %         ar(1,2) = y0(1,b);
+% %         ar(1,3) = 1;
+% %         Z(i,b) = functionslibv4.objective(ar,10,K,T,y,gdp,G_R,f_n,p_k,BETAt_k,sig2,phi_0,t_0);
+% %     end
+% % end
+% %
+% % surf(X,Y,Z)
+% % for t = 1:T
+% %     phit = ...
+% %
+% % end
+% 
+% 
+% %guardar
+% 
+% %err = (guardar ~= hdp)
+% 
+% end
+% % plot snr to tile (m)

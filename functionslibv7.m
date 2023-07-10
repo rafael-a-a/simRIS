@@ -115,38 +115,54 @@ classdef functionslibv7
       
       
       function finalp = outrem(pestimation,N)
-          
-          av = mean(pestimation);
-          sd = std(pestimation);
-          P = 0;
-          
-          for n = 1:N
-               c = (pestimation(n,:) < av + sd);
-               d = (pestimation(n,:) > av - sd);
-               f = all(c == 1);
-               g = all(d == 1);
-               if f && g 
-                  P = P + 1;
-               end
-          end
-          
-          padd = zeros(P,3);
-          cont = 1;
-          
-          for n = 1:N
-               c = (pestimation(n,:) < av + sd);
-               d = (pestimation(n,:) > av - sd);
-               f = all(c == 1);
-               g = all(d == 1);
-               if f && g && (cont <= P)
-                  padd(cont,:) = pestimation(n,:);
-                  cont = cont + 1;
+
+          if N == 1
+              finalp = pestimation
+
+          else
+
+              av = mean(pestimation);
+              sd = std(pestimation);
+              P = 0;
+
+
+              for n = 1:N
+                  c = (pestimation(n,:) <= av + sd);
+                  d = (pestimation(n,:) >= av - sd);
+                  f = all(c == 1);
+                  g = all(d == 1);
+                  if f && g
+                      P = P + 1;
+                  end
+                  
               end
+                
+             
+              if P ~= 0
+                  padd = zeros(P,3);
+
+                  cont = 1;
+
+                  for n = 1:N
+                      c = (pestimation(n,:) < av +  sd);
+                      d = (pestimation(n,:) > av -  sd);
+                      f = all(c == 1);
+                      g = all(d == 1);
+                      if f && g && (cont <= P)
+                          padd(cont,:) = pestimation(n,:);
+                          cont = cont + 1;
+                      end
+                  end
+
+
+                  padd
+                  finalp = mean(padd);
+              else
+                  finalp = mean(pestimation);
+              end
+         
+
           end
-          
-          padd
-          finalp = mean(padd);
-          
       end
       
    end

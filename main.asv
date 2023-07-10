@@ -1,0 +1,45 @@
+
+%Get table from .xls file
+table = readtable('table1.xls');
+fig = uifigure;
+uit = uitable(fig,'Data',table,'Position',[10 10 550 400]);
+drawnow
+
+frequency = 28;
+pilots = 500;
+iterations = 50;
+error = zeros(iterations,1);
+
+% for p = 1:7
+%     for n = 1:iterations
+%         error(n,p) = Simulation_v35(pilots,frequency,iterations,n);
+%         n
+%     end
+%     p
+%     pilots = pilots + 20;
+%     if pilots == 21
+%         pilots = 20;
+%         
+%     end
+%     
+% end
+
+figure()
+
+errormean = zeros(1,1);
+
+for k = 1:1
+    errormean(1,k) = mean(rmoutliers(error(:,k)));
+end
+
+
+figure()
+semilogy(errormean)
+title('Error');
+%legend("3.5GHz, N=16","3.5GHz, N=16");
+ylabel("Error (cm)");
+xlabel("Pilots (T)");
+xtickangle(0)
+xticks([1 2 3 4 5 6 7])
+xticklabels({'1','20','40','60','80','100','120'})
+
